@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 def calc_flexible_score_dynamic(N, K, facts):
-    if N == 0 or K == 0:
+    if N == 0 or K == 0 or len(facts) == 0:
         return [], 0, 0
     
     results = []
@@ -49,13 +49,13 @@ def calc_flexible_score_dynamic(N, K, facts):
         total_done += F_i
         total_score += score
     
-    month_percent = round((total_done / N * 100), 1)
+    month_percent = round((total_done / N * 100), 1) if N > 0 else 0
     return results, total_score, month_percent
 
 st.set_page_config(page_title="Баллы инженеров", layout="wide")
+
 st.title("🏭 Расчёт баллов выездных инженеров")
 
-# Левая колонка — ввод
 col_input, col_result = st.columns([1, 3])
 
 with col_input:
@@ -71,32 +71,32 @@ with col_input:
         f = st.number_input(f"Выезд #{i+1}", min_value=0, value=0, key=f"f{i}")
         facts.append(f)
 
-# Результаты
 if st.button("🚀 Рассчитать баллы", type="primary", use_container_width=True):
     results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
     
     with col_result:
-    st.header("📊 Детальный расчёт")
-    st.markdown("""
-**📋 Легенда:**
+        st.header("📊 Детальный расчёт")
+        
+        st.markdown("""
+**📋 Легенда таблицы:**
 - **Выезд** — номер выезда в месяце  
-- **P** — план на выезд (остаток/оставшиеся)
-- **F** — факт станций  
-- **%выезд** — % плана выезда
-- **Баллы** — KPI (макс. 2/выезд)
-- **Ожид.%** — ожидаемый % от N
-- **Факт.%** — фактический % от N  
-- **Статус** — оценка
-    """)
-    
-    df = pd.DataFrame(results)
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    
-    st.markdown("---")
-    col1m, col2m, col3m = st.columns(3)
-    col1m.metric("**Итого баллов**", f"{total_score} из {len(facts)*2}")
-    col2m.metric("**Выполнено месяц**", f"{month_percent}%", f"{sum(facts)}/{N}")
-    col3m.metric("**Максимум**", f"{len(facts)*2} баллов")
+- **P** — план на выезд (остаток/оставшиеся выезды)
+- **F** — факт станций
+- **%выезд** — выполнение плана выезда
+- **Баллы** — баллы KPI (макс. 2 за выезд)
+- **Ожид.%** — ожидаемый % от всех станций
+- **Факт.%** — фактический % от всех станций  
+- **Статус** — итоговая оценка
+        """)
+        
+        df = pd.DataFrame(results)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        col1m, col2m, col3m = st.columns(3)
+        col1m.metric("Итого баллов", f"{total_score} из {len(facts)*2}")
+        col2m.metric("Выполнено месяц", f"{month_percent}%", f"{sum(facts)}/{N}")
+        col3m.metric("Максимум", f"{len(facts)*2} баллов")
 
 st.markdown("---")
-st.caption("🔗 Поделись ссылкой на расчёт!")
+st.caption("🔗 Поделись ссылкой — расчёт онлайн!")
