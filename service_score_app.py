@@ -99,4 +99,4 @@ if st.button("🚀 Рассчитать баллы", type="primary", use_contain
         col3m.metric("Максимум", f"{len(facts)*2} баллов")
 
 st.markdown("---")
-st.caption("🔗 Поделись ссылкой — расчёт онлайн!")
+st.caption("🔗 Поделись ссылкой — не губи свой КПИ!")
