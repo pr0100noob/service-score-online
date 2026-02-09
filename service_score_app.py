@@ -1,6 +1,9 @@
 import streamlit as st
 
 def calc_flexible_score_dynamic(N, K, facts):
+    if N == 0 or K == 0:
+        return [], 0, 0
+    
     results = []
     remaining_stations = N
     remaining_visits = K
@@ -12,8 +15,8 @@ def calc_flexible_score_dynamic(N, K, facts):
         P_i = remaining_stations / remaining_visits if remaining_visits > 0 else 0
         percent_visit = (F_i / P_i * 100) if P_i > 0 else 0
         
-        expected_progress = ((i+1) / K * 100) if K > 0 else 0
-        actual_progress = (total_done + F_i) / N * 100 if N > 0 else 0
+        expected_progress = ((i+1) / K * 100)
+        actual_progress = (total_done + F_i) / N * 100
         
         if actual_progress >= expected_progress:
             score = 2
@@ -40,7 +43,7 @@ def calc_flexible_score_dynamic(N, K, facts):
         total_done += F_i
         total_score += score
     
-    month_percent = round((total_done / N * 100), 1) if N > 0 else 0
+    month_percent = round((total_done / N * 100), 1)
     return results, total_score, month_percent
 
 st.set_page_config(page_title="Расчёт баллов инженеров", layout="wide")
@@ -49,24 +52,24 @@ st.title("🏭 Расчёт баллов сервисных инженеров")
 col1, col2 = st.columns(2)
 with col1:
     st.header("📋 Вводные данные")
-    N = st.number_input("Станций по договору (N)", min_value=1, value=0)
-    K = st.number_input("Выездов в месяц (K)", min_value=1, value=0)
-
-num_visits = st.number_input("Сколько выездов учесть", min_value=1, max_value=20, value=0)
+    N = st.number_input("Станций по договору (N)", min_value=0, value=0)
+    K = st.number_input("Выездов в месяц (K)", min_value=0, value=0)
+    num_visits = st.number_input("Сколько выездов учесть", min_value=0, max_value=20, value=0)
 
 with col2:
     st.header("📈 Результат")
-    if 'results' in st.session_state:
+    if 'results' in st.session_state and st.session_state.results:
         st.dataframe(st.session_state.results, use_container_width=True)
 
 st.markdown("### Фактически проверено по выездам")
 facts = []
-for i in range(num_visits):
-    f = st.number_input(f"Выезд #{i+1}", min_value=0, value=0, key=f"f{i}")
-    facts.append(f)
+if num_visits > 0:
+    for i in range(num_visits):
+        f = st.number_input(f"Выезд #{i+1}", min_value=0, value=0, key=f"f{i}")
+        facts.append(f)
 
 if st.button("🚀 Рассчитать баллы", type="primary"):
-    if N > 0 and K > 0 and num_visits > 0:
+    if N > 0 and K > 0 and num_visits > 0 and sum(facts) > 0:
         results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
         st.session_state.results = results
         
@@ -75,7 +78,7 @@ if st.button("🚀 Рассчитать баллы", type="primary"):
         col2.metric("Выполнено по месяцу", f"{month_percent}%")
         col3.metric("Всего станций", f"{sum(facts)}/{N}")
     else:
-        st.error("❌ Заполни все поля!")
+        st.error("❌ Введи данные: N>0, K>0, выезды>0, факт>0")
 
 st.markdown("---")
 st.caption("👥 Поделись ссылкой — все увидят расчёт!")
