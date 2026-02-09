@@ -76,17 +76,27 @@ if st.button("🚀 Рассчитать баллы", type="primary", use_contain
     results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
     
     with col_result:
-        st.header("📊 Детальный расчёт")
-        st.markdown("**Выезд** — номер выезда в месяце | **P** — план на выезд | **F** — факт | **%выезд** — выполнение плана выезда")
-        
-        df = pd.DataFrame(results)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        
-        st.markdown("---")
-        col1m, col2m, col3m = st.columns(3)
-        col1m.metric("Итого баллов", total_score, delta=None)
-        col2m.metric("Выполнено месяц", f"{month_percent}%", delta=None)
-        col3m.metric("Станций всего", f"{sum(facts)}/{N}", delta=None)
+    st.header("📊 Детальный расчёт")
+    st.markdown("""
+**📋 Легенда:**
+- **Выезд** — номер выезда в месяце  
+- **P** — план на выезд (остаток/оставшиеся)
+- **F** — факт станций  
+- **%выезд** — % плана выезда
+- **Баллы** — KPI (макс. 2/выезд)
+- **Ожид.%** — ожидаемый % от N
+- **Факт.%** — фактический % от N  
+- **Статус** — оценка
+    """)
+    
+    df = pd.DataFrame(results)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    col1m, col2m, col3m = st.columns(3)
+    col1m.metric("**Итого баллов**", f"{total_score} из {len(facts)*2}")
+    col2m.metric("**Выполнено месяц**", f"{month_percent}%", f"{sum(facts)}/{N}")
+    col3m.metric("**Максимум**", f"{len(facts)*2} баллов")
 
 st.markdown("---")
 st.caption("🔗 Поделись ссылкой на расчёт!")
