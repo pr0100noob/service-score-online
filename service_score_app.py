@@ -30,9 +30,9 @@ def calc_flexible_score_dynamic(N, K, facts):
                 status = "90+% хорошо"
         
         results.append({
-            'выезд': i+1, 'P': round(P_i, 1), 'F': F_i, '%выезд': round(percent_visit, 1),
-            'баллы': score, 'ожидаемый_%': round(expected_progress, 1), 
-            'факт_%': round(actual_progress, 1), 'status': status
+            'Выезд': f"#{i+1}", 'План': round(P_i, 1), 'Факт': F_i, '%выезд': f"{round(percent_visit, 1)}%",
+            'Баллы': score, 'Ожид.%': f"{round(expected_progress, 1)}%", 
+            'Факт.%': f"{round(actual_progress, 1)}%", 'Статус': status
         })
         
         remaining_stations -= F_i
@@ -43,34 +43,39 @@ def calc_flexible_score_dynamic(N, K, facts):
     month_percent = round((total_done / N * 100), 1) if N > 0 else 0
     return results, total_score, month_percent
 
+st.set_page_config(page_title="Расчёт баллов инженеров", layout="wide")
 st.title("🏭 Расчёт баллов сервисных инженеров")
-st.markdown("---")
 
 col1, col2 = st.columns(2)
 with col1:
-    N = st.number_input("Станций по договору (N)", min_value=1, value=47)
-    K = st.number_input("Выездов в месяц (K)", min_value=1, value=4)
+    st.header("📋 Вводные данные")
+    N = st.number_input("Станций по договору (N)", min_value=1, value=0)
+    K = st.number_input("Выездов в месяц (K)", min_value=1, value=0)
 
-num_visits = st.number_input("Сколько выездов учесть", min_value=1, max_value=20, value=4)
+num_visits = st.number_input("Сколько выездов учесть", min_value=1, max_value=20, value=0)
+
+with col2:
+    st.header("📈 Результат")
+    if 'results' in st.session_state:
+        st.dataframe(st.session_state.results, use_container_width=True)
 
 st.markdown("### Фактически проверено по выездам")
 facts = []
 for i in range(num_visits):
-    f = st.number_input(f"Выезд {i+1}", min_value=0, value=10, key=f"f{i}")
+    f = st.number_input(f"Выезд #{i+1}", min_value=0, value=0, key=f"f{i}")
     facts.append(f)
 
-if st.button("🚀 Рассчитать баллы"):
-    results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
-    
-    st.markdown("---")
-    st.subheader("📊 Результаты")
-    
-    df = st.dataframe(results, use_container_width=True)
-    
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Итого баллов", total_score)
-    col2.metric("Выполнено по месяцу", f"{month_percent}%")
-    col3.metric("Всего станций", f"{sum(facts)}/{N}")
-    
-    st.markdown("---")
-    st.caption("Поделись ссылкой — все увидят расчёт!")
+if st.button("🚀 Рассчитать баллы", type="primary"):
+    if N > 0 and K > 0 and num_visits > 0:
+        results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
+        st.session_state.results = results
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Итого баллов", total_score)
+        col2.metric("Выполнено по месяцу", f"{month_percent}%")
+        col3.metric("Всего станций", f"{sum(facts)}/{N}")
+    else:
+        st.error("❌ Заполни все поля!")
+
+st.markdown("---")
+st.caption("👥 Поделись ссылкой — все увидят расчёт!")
