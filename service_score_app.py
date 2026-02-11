@@ -415,10 +415,24 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    .streamlit-expanderHeader:hover {
-        border-left-color: #a78bfa !important;
-        background: linear-gradient(135deg, rgba(51, 65, 85, 1) 0%, rgba(71, 85, 105, 1) 100%) !important;
-        box-shadow: 0 8px 30px rgba(96, 165, 250, 0.2) !important;
+     /* Содержимое expander */
+    .streamlit-expanderContent {
+        background: rgba(17, 24, 39, 0.5) !important;
+        border: 1px solid rgba(100, 116, 139, 0.3) !important;
+        border-top: none !important;
+        border-radius: 0 0 12px 12px !important;
+        padding: 1.5rem !important;
+    }
+    
+    /* Убираем белые фоны при hover */
+    .streamlit-expander:hover,
+    .streamlit-expanderHeader:hover,
+    details:hover {
+        background: transparent !important;
+    }
+    
+    details[open] > summary {
+        background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(71, 85, 105, 0.95) 100%) !important;
     }
     
     /* Кнопки Primary */
