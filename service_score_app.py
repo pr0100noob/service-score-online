@@ -49,7 +49,8 @@ def get_current_month_report(company_name):
     conn.close()
     
     if result:
-        visit_dates = json.loads(result[5]) if result[5] else []
+        # PostgreSQL JSONB уже возвращает объект Python
+        visit_dates = result[5] if result[5] else []
         return {
             'id': result[0],
             'facts': json.loads(result[1]),
