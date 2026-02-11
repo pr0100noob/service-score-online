@@ -283,202 +283,282 @@ st.set_page_config(page_title="Баллы инженеров", layout="wide")
 
 st.markdown("""
 <style>
-    /* Основная тема */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #e2e8f0;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    /* Основа */
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Заголовок */
+    .stApp {
+        background: #0a0f1e;
+        color: #e5e7eb;
+    }
+    
+    /* Заголовок H1 */
     h1 {
-        color: #38bdf8 !important;
-        font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-        text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
-        font-weight: 700;
-        letter-spacing: 1px;
-        padding: 1rem 0;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 2.5rem !important;
+        letter-spacing: -0.02em;
+        margin-bottom: 2rem !important;
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     /* Подзаголовки */
-    h2, h3 {
-        color: #c084fc !important;
-        font-family: 'SF Mono', monospace;
-        font-weight: 600;
+    h2 {
+        color: #f3f4f6 !important;
+        font-weight: 600 !important;
+        font-size: 1.5rem !important;
+        letter-spacing: -0.01em;
+        margin-top: 2rem !important;
+    }
+    
+    h3 {
+        color: #d1d5db !important;
+        font-weight: 600 !important;
+        font-size: 1.125rem !important;
+        margin-top: 1.5rem !important;
     }
     
     /* Обычный текст */
-    p, span, div {
-        color: #e2e8f0 !important;
+    p, span, div, li {
+        color: #d1d5db !important;
+        font-weight: 400;
+        line-height: 1.6;
     }
     
-    /* Лейблы */
+    /* Лейблы форм */
     .stSelectbox label, .stNumberInput label {
-        color: #94a3b8 !important;
-        font-weight: 500;
+        color: #9ca3af !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
     }
     
     /* Карточки (expander) */
     .streamlit-expanderHeader {
-        background: rgba(30, 41, 59, 0.8) !important;
-        border: 1px solid #334155 !important;
-        border-left: 4px solid #38bdf8 !important;
-        border-radius: 8px !important;
-        color: #e2e8f0 !important;
-        font-weight: 600;
-        padding: 1rem !important;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%) !important;
+        border: 1px solid rgba(75, 85, 99, 0.4) !important;
+        border-left: 3px solid #60a5fa !important;
+        border-radius: 12px !important;
+        color: #f3f4f6 !important;
+        font-weight: 600 !important;
+        padding: 1.25rem !important;
+        backdrop-filter: blur(10px);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .streamlit-expanderHeader:hover {
-        border-left-color: #c084fc !important;
-        background: rgba(30, 41, 59, 1) !important;
-        box-shadow: 0 4px 20px rgba(56, 189, 248, 0.2) !important;
+        border-left-color: #a78bfa !important;
+        background: linear-gradient(135deg, rgba(31, 41, 55, 1) 0%, rgba(55, 65, 81, 1) 100%) !important;
+        box-shadow: 0 8px 30px rgba(96, 165, 250, 0.15) !important;
+        transform: translateX(4px);
     }
     
-    /* Кнопки основные */
+    /* Кнопки Primary */
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%) !important;
-        color: #0f172a !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+        color: #ffffff !important;
         border: none !important;
-        border-radius: 8px !important;
-        font-weight: 600;
-        padding: 0.6rem 1.8rem;
-        box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-        transition: all 0.3s ease;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        padding: 0.75rem 2rem !important;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
-        box-shadow: 0 6px 25px rgba(56, 189, 248, 0.5) !important;
+        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5) !important;
         transform: translateY(-2px);
     }
     
     /* Кнопки обычные */
     .stButton > button {
-        background: rgba(51, 65, 85, 0.8) !important;
-        color: #e2e8f0 !important;
-        border: 1px solid #475569 !important;
-        border-radius: 8px !important;
-        font-weight: 500;
+        background: rgba(31, 41, 55, 0.8) !important;
+        color: #e5e7eb !important;
+        border: 1px solid rgba(75, 85, 99, 0.5) !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        padding: 0.65rem 1.5rem !important;
         transition: all 0.3s ease;
     }
     
     .stButton > button:hover {
-        background: rgba(71, 85, 105, 1) !important;
-        border-color: #38bdf8 !important;
+        background: rgba(55, 65, 81, 1) !important;
+        border-color: #60a5fa !important;
+        box-shadow: 0 4px 15px rgba(96, 165, 250, 0.2);
     }
     
     /* Поля ввода */
     .stNumberInput > div > div > input,
-    .stSelectbox > div > div > div {
-        background-color: rgba(30, 41, 59, 0.8) !important;
-        color: #e2e8f0 !important;
-        border: 1px solid #475569 !important;
-        border-radius: 8px;
-        font-size: 1rem;
+    .stSelectbox > div > div {
+        background: rgba(17, 24, 39, 0.9) !important;
+        color: #f3f4f6 !important;
+        border: 1px solid rgba(75, 85, 99, 0.5) !important;
+        border-radius: 10px !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+        padding: 0.75rem 1rem !important;
+        transition: all 0.3s ease;
     }
     
     .stNumberInput > div > div > input:focus,
-    .stSelectbox > div > div > div:focus {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-    }
-    
-    /* Выпадающий список */
-    [data-baseweb="select"] > div {
-        background-color: rgba(30, 41, 59, 0.9) !important;
-        color: #e2e8f0 !important;
+    .stSelectbox > div > div:focus-within {
+        border-color: #60a5fa !important;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
+        background: rgba(17, 24, 39, 1) !important;
     }
     
     /* Таблицы */
     .stDataFrame {
-        border: 1px solid #334155;
-        border-radius: 8px;
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        border-radius: 12px;
         overflow: hidden;
-        background: rgba(15, 23, 42, 0.5);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     
-    /* Заголовки таблиц */
     .stDataFrame thead tr th {
-        background-color: rgba(30, 41, 59, 0.9) !important;
-        color: #38bdf8 !important;
-        font-weight: 600;
+        background: rgba(31, 41, 55, 0.95) !important;
+        color: #60a5fa !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem !important;
+    }
+    
+    .stDataFrame tbody tr {
+        border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+    }
+    
+    .stDataFrame tbody tr:hover {
+        background: rgba(31, 41, 55, 0.4);
     }
     
     /* Метрики */
     [data-testid="stMetricValue"] {
-        color: #38bdf8 !important;
-        font-family: 'SF Mono', monospace;
-        font-size: 2rem !important;
-        font-weight: 700;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 2.25rem !important;
+        letter-spacing: -0.02em;
     }
     
     [data-testid="stMetricLabel"] {
-        color: #94a3b8 !important;
-        font-weight: 500;
+        color: #9ca3af !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    [data-testid="stMetric"] {
+        background: rgba(17, 24, 39, 0.6);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(75, 85, 99, 0.3);
     }
     
     /* Info boxes */
     .stInfo {
-        background: rgba(56, 189, 248, 0.1) !important;
-        border-left: 4px solid #38bdf8 !important;
-        color: #e2e8f0 !important;
-        border-radius: 6px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 197, 253, 0.05) 100%) !important;
+        border: 1px solid rgba(96, 165, 250, 0.3) !important;
+        border-left: 4px solid #60a5fa !important;
+        border-radius: 10px !important;
+        color: #e5e7eb !important;
+        padding: 1rem 1.25rem !important;
+        backdrop-filter: blur(10px);
     }
     
     /* Success boxes */
     .stSuccess {
-        background: rgba(34, 197, 94, 0.1) !important;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(134, 239, 172, 0.05) 100%) !important;
+        border: 1px solid rgba(34, 197, 94, 0.3) !important;
         border-left: 4px solid #22c55e !important;
-        color: #e2e8f0 !important;
-        border-radius: 6px;
+        border-radius: 10px !important;
+        color: #e5e7eb !important;
+        padding: 1rem 1.25rem !important;
     }
     
     /* Error boxes */
     .stError {
-        background: rgba(239, 68, 68, 0.1) !important;
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(252, 165, 165, 0.05) 100%) !important;
+        border: 1px solid rgba(239, 68, 68, 0.3) !important;
         border-left: 4px solid #ef4444 !important;
-        color: #e2e8f0 !important;
+        border-radius: 10px !important;
     }
     
     /* Табы */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: transparent;
+        gap: 12px;
+        background: transparent;
+        border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+        padding-bottom: 0;
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid #334155;
-        border-radius: 8px 8px 0 0;
-        color: #94a3b8;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        color: #9ca3af;
         font-weight: 500;
-        padding: 12px 24px;
+        font-size: 0.95rem;
+        padding: 1rem 1.5rem;
         transition: all 0.3s ease;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(30, 41, 59, 0.9);
-        color: #e2e8f0;
+        color: #d1d5db;
+        border-bottom-color: rgba(96, 165, 250, 0.3);
     }
     
     .stTabs [aria-selected="true"] {
-        background: rgba(56, 189, 248, 0.15);
-        border-bottom: 3px solid #38bdf8;
-        color: #38bdf8;
-        font-weight: 700;
+        background: transparent;
+        border-bottom: 3px solid #60a5fa;
+        color: #ffffff;
+        font-weight: 600;
     }
     
-    /* Caption внизу */
+    /* Caption */
     .stCaption {
-        color: #64748b !important;
+        color: #6b7280 !important;
         text-align: center;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
+        margin-top: 3rem;
     }
     
-    /* Иконки эмодзи */
-    .stMarkdown strong {
-        color: #38bdf8 !important;
+    /* Strong text */
+    strong {
+        color: #f3f4f6 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(17, 24, 39, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(75, 85, 99, 0.8);
+        border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(107, 114, 128, 1);
     }
 </style>
 """, unsafe_allow_html=True)
