@@ -36,6 +36,7 @@ def load_companies_from_gsheet():
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+    # Проверяем существование таблицы
     cur.execute("""
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
