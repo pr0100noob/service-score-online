@@ -13,13 +13,22 @@ SHEET_NAME = "Клиенты"
 
 # PostgreSQL connection
 def get_db_connection():
-    return psycopg2.connect(
-        host="localhost",
-        database="service_score_journal",
-        user="postgres",
-        password="postgres"
-    )
-
+    if "postgres" in st.secrets:
+        return psycopg2.connect(
+            host=st.secrets["postgres"]["host"],
+            database=st.secrets["postgres"]["database"],
+            user=st.secrets["postgres"]["user"],
+            password=st.secrets["postgres"]["password"],
+            port=st.secrets["postgres"]["port"]
+        )
+    else:
+        # Локальная разработка
+        return psycopg2.connect(
+            host="localhost",
+            database="service_score_journal",
+            user="postgres",
+            password="postgres"
+        )
 
 # ---------------------- GOOGLE SHEETS ---------------------- #
 
