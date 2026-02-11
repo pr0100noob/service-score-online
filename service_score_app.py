@@ -355,30 +355,52 @@ st.markdown("""
         font-weight: 500 !important;
     }
     
-    /* Selectbox - выпадающее меню */
-    [data-baseweb="popover"] {
-        background: rgba(15, 23, 42, 0.98) !important;
-        border: 1px solid rgba(100, 116, 139, 0.3) !important;
-        border-radius: 10px !important;
+    /* Selectbox - иконка стрелки */
+    .stSelectbox svg {
+        fill: #94a3b8 !important;
     }
     
-    /* Selectbox - опции в списке */
-    [role="option"] {
+    /* Selectbox - выпадающее меню (popover) */
+    [data-baseweb="popover"] {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Selectbox - список опций */
+    [data-baseweb="menu"] {
+        background: #1e293b !important;
+    }
+    
+    /* Selectbox - каждая опция */
+    [role="option"],
+    [data-baseweb="menu"] li {
         background: transparent !important;
         color: #e2e8f0 !important;
         padding: 0.75rem 1rem !important;
-        transition: all 0.2s ease;
+        transition: all 0.2s ease !important;
+        font-weight: 500 !important;
     }
     
-    [role="option"]:hover {
-        background: rgba(59, 130, 246, 0.2) !important;
+    /* Selectbox - hover на опции */
+    [role="option"]:hover,
+    [data-baseweb="menu"] li:hover {
+        background: rgba(59, 130, 246, 0.25) !important;
         color: #ffffff !important;
     }
     
-    [aria-selected="true"] {
-        background: rgba(59, 130, 246, 0.3) !important;
+    /* Selectbox - выбранная опция */
+    [aria-selected="true"],
+    [data-baseweb="menu"] li[aria-selected="true"] {
+        background: rgba(59, 130, 246, 0.35) !important;
         color: #ffffff !important;
         font-weight: 600 !important;
+    }
+    
+    /* Selectbox - input внутри */
+    [data-baseweb="select"] input {
+        color: #f1f5f9 !important;
     }
     
     /* Expander карточки */
