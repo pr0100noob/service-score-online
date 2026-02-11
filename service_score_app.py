@@ -195,14 +195,15 @@ def get_reports(company_name=None):
         cur = conn.cursor()
         if company_name:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, month_percent
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates
                 FROM reports WHERE company_name = %s ORDER BY created_at DESC
             """, (company_name,))
         else:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, month_percent
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates
                 FROM reports ORDER BY created_at DESC
             """)
+
         rows = cur.fetchall()
         cur.close()
         conn.close()
