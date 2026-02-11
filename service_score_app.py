@@ -30,6 +30,78 @@ def get_db_connection():
             password="postgres"
         )
 
+def get_current_month_report(company_name):
+    """Получить отчёт текущего месяца для компании"""
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, facts_json, total_score, max_score, month_percent
+        FROM reports 
+        WHERE company_name = %s AND month_year = %s
+        ORDER BY created_at DESC LIMIT 1
+    """, (company_name, current_month))
+    
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if result:
+        return {
+            'id': result[0],
+            'facts': json.loads(result[1]),
+            'total_score': result[2],
+            'max_score': result[3],
+            'month_percent': result[4]
+        }
+    return None
+
+
+def save_visit_report(company_name, stations_checked, K, N):
+    """Сохранить новый выезд и обновить месячный отчёт"""
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    # Получаем текущий отчёт месяца
+    current = get_current_month_report(company_name)
+    
+    if current:
+        # Добавляем к существующему
+        facts = current['facts'] + [stations_checked]
+    else:
+        # Первый выезд месяца
+        facts = [stations_checked]
+    
+    # Пересчитываем баллы
+    results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
+    max_score = len(facts) * 2
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if current:
+        # Обновляем существующий отчёт
+        cur.execute("""
+            UPDATE reports 
+            SET facts_json = %s, total_score = %s, max_score = %s, 
+                month_percent = %s, created_at = NOW()
+            WHERE id = %s
+        """, (json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, current['id']))
+    else:
+        # Создаём новый отчёт месяца
+        cur.execute("""
+            INSERT INTO reports (company_name, month_year, facts_json, total_score, max_score, month_percent)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (company_name, current_month, json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return results, total_score, max_score, month_percent, len(facts)
+
 # ---------------------- GOOGLE SHEETS ---------------------- #
 
 @st.cache_data(ttl=300)
@@ -170,7 +242,7 @@ st.title("🏭 Расчёт баллов и журнал отчётов")
 tab_calc, tab_journal = st.tabs(["➕ Новый отчёт", "📋 Журнал отчётов"])
 
 with tab_calc:
-    st.subheader("Создать отчёт по компании")
+    st.subheader("Добавить выезд")
 
     try:
         companies_df = load_companies_from_gsheet()
@@ -186,32 +258,53 @@ with tab_calc:
         company_row = companies_df[companies_df["name"] == selected_name].iloc[0]
         N = int(company_row["stations"])
         
-        st.write(f"Станций по договору: **{N}**")
+        st.write(f"📍 Станций по договору: **{N}**")
         K = st.number_input("Выездов в месяц (K)", min_value=1, value=4)
 
-        num_visits = st.number_input("Сколько выездов учесть", min_value=1, max_value=K, value=K)
+        # Показываем текущий прогресс
+        current_report = get_current_month_report(selected_name)
+        
+        if current_report:
+            facts = current_report['facts']
+            visit_num = len(facts) + 1
+            total_checked = sum(facts)
+            
+            st.info(f"""
+            **Текущий месяц:**
+            - Выездов уже сделано: **{len(facts)} из {K}**
+            - Станций проверено: **{total_checked} из {N}** ({current_report['month_percent']}%)
+            - Баллы: **{current_report['total_score']} из {current_report['max_score']}**
+            """)
+            
+            st.write(f"🚀 Сейчас: **Выезд #{visit_num}**")
+        else:
+            visit_num = 1
+            st.write(f"🚀 Это будет **первый выезд** в этом месяце")
 
-        st.markdown("**Факт по выездам:**")
-        facts = []
-        for i in range(num_visits):
-            f = st.number_input(f"Выезд #{i+1}", min_value=0, value=0, key=f"calc_f{i}")
-            facts.append(int(f))
+        stations_checked = st.number_input(
+            f"Сколько станций проверено на выезде #{visit_num}?", 
+            min_value=0, 
+            value=0, 
+            key="stations_input"
+        )
 
-        if st.button("🚀 Рассчитать и сохранить", type="primary"):
-            results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
-            max_score = num_visits * 2
+        if st.button("✅ Сохранить выезд", type="primary"):
+            if stations_checked > 0:
+                results, total_score, max_score, month_percent, total_visits = save_visit_report(
+                    selected_name, stations_checked, K, N
+                )
 
-            st.markdown("### Детальный расчёт")
-            st.dataframe(pd.DataFrame(results), use_container_width=True, hide_index=True)
+                st.success(f"✅ Выезд #{visit_num} сохранён!")
+                
+                st.markdown("### 📊 Детальный расчёт")
+                st.dataframe(pd.DataFrame(results), use_container_width=True, hide_index=True)
 
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Итого баллов", f"{total_score} из {max_score}")
-            c2.metric("Выполнено", f"{month_percent}%")
-            c3.metric("Компания", selected_name)
-
-            # Сохраняем в PostgreSQL
-            save_report(selected_name, facts, total_score, max_score, month_percent)
-            st.success("✅ Отчёт сохранён в БД!")
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Итого баллов", f"{total_score} из {max_score}")
+                c2.metric("Выполнено", f"{month_percent}%")
+                c3.metric("Выездов", f"{total_visits} из {K}")
+            else:
+                st.error("Укажите количество проверенных станций!")
 
 with tab_journal:
     st.subheader("📋 Журнал всех отчётов")
