@@ -341,57 +341,6 @@ with tab_calc:
                 c3.metric("Выездов", f"{total_visits} из {K}")
             else:
                 st.error("Укажите количество проверенных станций!")
-                # --- Блок редактирования существующих выездов ---
-        if current_report and len(current_report['facts']) > 0:
-            st.markdown("---")
-            st.subheader("✏️ Редактировать выезды текущего месяца")
-            
-            facts = current_report['facts']
-            
-            # Показываем все выезды для редактирования
-            st.write("**Текущие выезды:**")
-            
-            edited_facts = []
-            for i, fact in enumerate(facts):
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    new_value = st.number_input(
-                        f"Выезд #{i+1}", 
-                        min_value=0, 
-                        value=fact, 
-                        key=f"edit_visit_{i}"
-                    )
-                    edited_facts.append(new_value)
-                with col2:
-                    st.write(f"Было: {fact}")
-            
-            if st.button("💾 Сохранить изменения", key="save_edits"):
-                # Проверяем, есть ли изменения
-                if edited_facts != facts:
-                    # Обновляем весь массив выездов
-                    from datetime import datetime
-                    current_month = datetime.now().strftime("%Y-%m")
-                    
-                    results, total_score, month_percent = calc_flexible_score_dynamic(N, K, edited_facts)
-                    max_score = len(edited_facts) * 2
-                    
-                    conn = get_db_connection()
-                    cur = conn.cursor()
-                    cur.execute("""
-                        UPDATE reports 
-                        SET facts_json = %s, total_score = %s, max_score = %s, 
-                            month_percent = %s, created_at = NOW()
-                        WHERE id = %s
-                    """, (json.dumps(edited_facts, ensure_ascii=False), total_score, max_score, month_percent, current_report['id']))
-                    
-                    conn.commit()
-                    cur.close()
-                    conn.close()
-                    
-                    st.success("✅ Изменения сохранены!")
-                    st.rerun()
-                else:
-                    st.info("Изменений не обнаружено")
 
 with tab_journal:
     st.subheader("📋 Журнал всех отчётов")
@@ -399,29 +348,90 @@ with tab_journal:
     try:
         companies_df = load_companies_from_gsheet()
         names = ["Все компании"] + companies_df["name"].tolist()
-        filter_company = st.selectbox("Фильтр", names)
+        filter_company = st.selectbox("Фильтр", names, key="journal_filter")
         filter_company = None if filter_company == "Все компании" else filter_company
     except:
         filter_company = None
 
     reports_df = get_reports(filter_company)
+    
     if reports_df.empty:
         st.info("Отчётов пока нет.")
     else:
-        reports_df["Факты"] = reports_df["facts_json"].apply(lambda x: ", ".join(map(str, json.loads(x))))
-        reports_df_view = reports_df[["id", "created_at", "company_name", "Факты", "total_score", "max_score", "month_percent"]]
-        reports_df_view = reports_df_view.rename(columns={
-            "id": "ID", "created_at": "Создан", "company_name": "Компания",
-            "total_score": "Баллы", "max_score": "Макс", "month_percent": "% месяц"
-        })
-
-        st.dataframe(reports_df_view, use_container_width=True, hide_index=True)
-
-        del_id = st.number_input("ID для удаления", min_value=0, value=0)
-        if st.button("🗑 Удалить"):
-            if del_id > 0:
-                delete_report(int(del_id))
-                st.success(f"Удалён ID={del_id}")
-                st.rerun()
+        # Группируем по компаниям
+        for idx, row in reports_df.iterrows():
+            company = row['company_name']
+            facts = json.loads(row['facts_json'])
+            report_id = row['id']
+            
+            # Получаем данные компании для расчёта
+            try:
+                company_row = companies_df[companies_df["name"] == company].iloc[0]
+                N = int(company_row["stations"])
+            except:
+                N = 0
+            
+            # Раскрывающийся блок для каждой компании
+            with st.expander(f"🏢 **{company}** — {row['month_percent']}% выполнено | Баллы: {row['total_score']}/{row['max_score']} | Создан: {row['created_at']}", expanded=False):
+                
+                st.markdown(f"**Всего выездов:** {len(facts)}")
+                st.markdown(f"**Станций по договору:** {N}")
+                
+                # Таблица с выездами
+                st.markdown("### 📊 Детали по выездам:")
+                
+                # Редактируемые поля для каждого выезда
+                edited_facts = []
+                
+                cols = st.columns([1, 2, 2])
+                cols[0].write("**№**")
+                cols[1].write("**Проверено станций**")
+                cols[2].write("**Действия**")
+                
+                for i, fact in enumerate(facts):
+                    cols = st.columns([1, 2, 2])
+                    cols[0].write(f"Выезд {i+1}")
+                    new_value = cols[1].number_input(
+                        f"v{i}", 
+                        min_value=0, 
+                        value=fact, 
+                        key=f"edit_{report_id}_{i}",
+                        label_visibility="collapsed"
+                    )
+                    edited_facts.append(new_value)
+                
+                # Кнопки действий
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("💾 Сохранить изменения", key=f"save_{report_id}"):
+                        if edited_facts != facts:
+                            K = len(facts)  # Используем текущее количество выездов
+                            results, total_score, month_percent = calc_flexible_score_dynamic(N, K, edited_facts)
+                            max_score = len(edited_facts) * 2
+                            
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            cur.execute("""
+                                UPDATE reports 
+                                SET facts_json = %s, total_score = %s, max_score = %s, 
+                                    month_percent = %s, created_at = NOW()
+                                WHERE id = %s
+                            """, (json.dumps(edited_facts, ensure_ascii=False), total_score, max_score, month_percent, report_id))
+                            
+                            conn.commit()
+                            cur.close()
+                            conn.close()
+                            
+                            st.success("✅ Изменения сохранены!")
+                            st.rerun()
+                        else:
+                            st.info("Изменений не обнаружено")
+                
+                with col2:
+                    if st.button("🗑 Удалить отчёт", key=f"del_{report_id}"):
+                        delete_report(report_id)
+                        st.success(f"Удалён отчёт ID={report_id}")
+                        st.rerun()
 
 st.caption("🔗 Данные обновляются из Google Sheets каждые 5 минут")
