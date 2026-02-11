@@ -19,22 +19,35 @@ def load_companies_from_gsheet():
     
     # Проверяем: локально или Streamlit Cloud
     if "gcp_service_account" in st.secrets:
-        # Streamlit Cloud Secrets
         creds_dict = dict(st.secrets["gcp_service_account"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     else:
-        # Локально из файла
         creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
     
     client = gspread.authorize(creds)
     sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    
+    # Читаем все данные как список списков
+    data = sheet.get_all_values()
+    
+    # Первая строка — заголовки
+    headers = data[0]
+    rows = data[1:]
+    
+    # Создаём DataFrame только из нужных столбцов (A, C)
+    df = pd.DataFrame(rows, columns=headers)
+    
+    # Берём только столбцы "Организация" и столбец с количеством станций
+    df = df[["Организация", "Количество раб.мест без серверов и доп.сервисов (обслуживаемых)"]]
     
     df = df.rename(columns={
         "Организация": "name",
         "Количество раб.мест без серверов и доп.сервисов (обслуживаемых)": "stations"
     })
+    
+    # Удаляем пустые строки и конвертируем stations в число
+    df = df[df["name"].str.strip() != ""]
+    df["stations"] = pd.to_numeric(df["stations"], errors="coerce").fillna(0).astype(int)
     
     return df[["name", "stations"]]
 
