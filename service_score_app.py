@@ -38,7 +38,7 @@ def get_current_month_report(company_name):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT id, facts_json, total_score, max_score, month_percent
+        SELECT id, facts_json, total_score, max_score, month_percent, visit_dates
         FROM reports 
         WHERE company_name = %s AND month_year = %s
         ORDER BY created_at DESC LIMIT 1
@@ -49,20 +49,22 @@ def get_current_month_report(company_name):
     conn.close()
     
     if result:
+        visit_dates = json.loads(result[5]) if result[5] else []
         return {
             'id': result[0],
             'facts': json.loads(result[1]),
             'total_score': result[2],
             'max_score': result[3],
-            'month_percent': result[4]
+            'month_percent': result[4],
+            'visit_dates': visit_dates
         }
     return None
-
 
 def save_visit_report(company_name, stations_checked, K, N):
     """Сохранить новый выезд и обновить месячный отчёт"""
     from datetime import datetime
     current_month = datetime.now().strftime("%Y-%m")
+    current_datetime = datetime.now().isoformat()
     
     # Получаем текущий отчёт месяца
     current = get_current_month_report(company_name)
@@ -70,9 +72,12 @@ def save_visit_report(company_name, stations_checked, K, N):
     if current:
         # Добавляем к существующему
         facts = current['facts'] + [stations_checked]
+        # Добавляем дату нового выезда
+        visit_dates = current.get('visit_dates', []) + [current_datetime]
     else:
         # Первый выезд месяца
         facts = [stations_checked]
+        visit_dates = [current_datetime]
     
     # Пересчитываем баллы
     results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
@@ -86,15 +91,15 @@ def save_visit_report(company_name, stations_checked, K, N):
         cur.execute("""
             UPDATE reports 
             SET facts_json = %s, total_score = %s, max_score = %s, 
-                month_percent = %s, created_at = NOW()
+                month_percent = %s, visit_dates = %s, created_at = NOW()
             WHERE id = %s
-        """, (json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, current['id']))
+        """, (json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, json.dumps(visit_dates), current['id']))
     else:
         # Создаём новый отчёт месяца
         cur.execute("""
-            INSERT INTO reports (company_name, month_year, facts_json, total_score, max_score, month_percent)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (company_name, current_month, json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent))
+            INSERT INTO reports (company_name, month_year, facts_json, total_score, max_score, month_percent, visit_dates)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (company_name, current_month, json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, json.dumps(visit_dates)))
     
     conn.commit()
     cur.close()
@@ -189,19 +194,19 @@ def get_reports(company_name=None):
         cur = conn.cursor()
         if company_name:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, month_percent
                 FROM reports WHERE company_name = %s ORDER BY created_at DESC
             """, (company_name,))
         else:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, month_percent
                 FROM reports ORDER BY created_at DESC
             """)
         rows = cur.fetchall()
         cur.close()
         conn.close()
         
-        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent"])
+        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent", "month_percent"])
         return df
     except:
         return pd.DataFrame()
@@ -380,16 +385,26 @@ with tab_journal:
                 # Таблица с выездами
                 st.markdown("### 📊 Детали по выездам:")
                 
+                # Получаем даты выездов
+                visit_dates_raw = row.get('visit_dates')
+                if visit_dates_raw:
+                    try:
+                        visit_dates = json.loads(visit_dates_raw) if isinstance(visit_dates_raw, str) else visit_dates_raw
+                    except:
+                        visit_dates = []
+                else:
+                    visit_dates = []
+                
                 # Редактируемые поля для каждого выезда
                 edited_facts = []
                 
-                cols = st.columns([1, 2, 2])
+                cols = st.columns([1, 2, 3])
                 cols[0].write("**№**")
                 cols[1].write("**Проверено станций**")
-                cols[2].write("**Действия**")
+                cols[2].write("**Дата добавления**")
                 
                 for i, fact in enumerate(facts):
-                    cols = st.columns([1, 2, 2])
+                    cols = st.columns([1, 2, 3])
                     cols[0].write(f"Выезд {i+1}")
                     new_value = cols[1].number_input(
                         f"v{i}", 
@@ -399,6 +414,19 @@ with tab_journal:
                         label_visibility="collapsed"
                     )
                     edited_facts.append(new_value)
+                    
+                    # Показываем дату
+                    if i < len(visit_dates):
+                        from datetime import datetime
+                        try:
+                            dt = datetime.fromisoformat(visit_dates[i])
+                            date_str = dt.strftime("%d.%m.%Y %H:%M")
+                        except:
+                            date_str = "Не указана"
+                    else:
+                        date_str = "Не указана"
+                    
+                    cols[2].write(date_str)
                 
                 # Кнопки действий
                 col1, col2 = st.columns(2)
@@ -406,7 +434,7 @@ with tab_journal:
                 with col1:
                     if st.button("💾 Сохранить изменения", key=f"save_{report_id}"):
                         if edited_facts != facts:
-                            K = len(facts)  # Используем текущее количество выездов
+                            K = len(facts)
                             results, total_score, month_percent = calc_flexible_score_dynamic(N, K, edited_facts)
                             max_score = len(edited_facts) * 2
                             
