@@ -746,13 +746,14 @@ with tab_journal:
                 # Редактируемые поля для каждого выезда
                 edited_facts = []
                 
-                cols = st.columns([1, 2, 3])
+                cols = st.columns([1, 2, 3, 1])
                 cols[0].write("**№**")
                 cols[1].write("**Проверено станций**")
                 cols[2].write("**Дата добавления**")
+                cols[3].write("**Действия**")
                 
                 for i, fact in enumerate(facts):
-                    cols = st.columns([1, 2, 3])
+                    cols = st.columns([1, 2, 3, 1])
                     cols[0].write(f"Выезд {i+1}")
                     new_value = cols[1].number_input(
                         f"v{i}", 
@@ -775,6 +776,39 @@ with tab_journal:
                         date_str = "Не указана"
                     
                     cols[2].write(date_str)
+                    
+                    # Кнопка удаления выезда
+                    if cols[3].button("🗑️", key=f"del_visit_{report_id}_{i}", help="Удалить выезд"):
+                        # Удаляем выезд из массивов
+                        facts.pop(i)
+                        if i < len(visit_dates):
+                            visit_dates.pop(i)
+                        
+                        if len(facts) == 0:
+                            # Если это последний выезд — удаляем весь отчёт
+                            delete_report(report_id)
+                            st.success("Отчёт полностью удалён")
+                            st.rerun()
+                        else:
+                            # Пересчитываем баллы
+                            results_new, total_score_new, month_percent_new = calc_flexible_score_dynamic(N, K, facts)
+                            max_score_new = len(facts) * 2
+                            
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            cur.execute("""
+                                UPDATE reports 
+                                SET facts_json = %s, total_score = %s, max_score = %s, 
+                                    month_percent = %s, visit_dates = %s, created_at = NOW()
+                                WHERE id = %s
+                            """, (json.dumps(facts, ensure_ascii=False), total_score_new, max_score_new, month_percent_new, json.dumps(visit_dates), report_id))
+                            
+                            conn.commit()
+                            cur.close()
+                            conn.close()
+                            
+                            st.success(f"Выезд #{i+1} удалён")
+                            st.rerun()
                 
                 # Кнопки действий
                 col1, col2 = st.columns(2)
