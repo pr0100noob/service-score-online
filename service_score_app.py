@@ -280,6 +280,143 @@ def calc_flexible_score_dynamic(N, K, facts):
 # ---------------------- UI ---------------------- #
 
 st.set_page_config(page_title="Баллы инженеров", layout="wide")
+
+# Кастомный CSS в стиле киберпанк
+st.markdown("""
+<style>
+    /* Основная тема */
+    :root {
+        --cyber-blue: #00d9ff;
+        --cyber-purple: #a855f7;
+        --cyber-dark: #0a0e27;
+        --cyber-card: #1a1f3a;
+    }
+    
+    /* Фон приложения */
+    .stApp {
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    }
+    
+    /* Заголовок */
+    h1 {
+        color: #00d9ff !important;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+    
+    /* Подзаголовки */
+    h2, h3 {
+        color: #a855f7 !important;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+    }
+    
+    /* Карточки (expander) */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #1a1f3a 0%, #252b4a 100%) !important;
+        border: 1px solid #00d9ff !important;
+        border-radius: 8px !important;
+        color: #00d9ff !important;
+        font-family: 'Courier New', monospace;
+        box-shadow: 0 4px 15px rgba(0, 217, 255, 0.2) !important;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        border-color: #a855f7 !important;
+        box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4) !important;
+    }
+    
+    /* Кнопки */
+    .stButton > button {
+        background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%) !important;
+        color: #0a0e27 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #a855f7 0%, #8b3fd9 100%) !important;
+        box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5) !important;
+        transform: translateY(-2px);
+    }
+    
+    /* Поля ввода */
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > div {
+        background-color: #1a1f3a !important;
+        color: #00d9ff !important;
+        border: 1px solid #00d9ff !important;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+    }
+    
+    /* Таблицы */
+    .stDataFrame {
+        border: 1px solid #00d9ff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Метрики */
+    [data-testid="stMetricValue"] {
+        color: #00d9ff !important;
+        font-family: 'Courier New', monospace;
+        font-size: 2rem !important;
+        text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+    }
+    
+    /* Info boxes */
+    .stInfo {
+        background-color: rgba(0, 217, 255, 0.1) !important;
+        border-left: 4px solid #00d9ff !important;
+        color: #00d9ff !important;
+        font-family: 'Courier New', monospace;
+    }
+    
+    /* Success boxes */
+    .stSuccess {
+        background-color: rgba(34, 197, 94, 0.1) !important;
+        border-left: 4px solid #22c55e !important;
+        color: #22c55e !important;
+    }
+    
+    /* Табы */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: linear-gradient(135deg, #1a1f3a 0%, #252b4a 100%);
+        border: 1px solid #00d9ff;
+        border-radius: 6px 6px 0 0;
+        color: #00d9ff;
+        font-family: 'Courier New', monospace;
+        padding: 10px 20px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+        color: #0a0e27;
+        font-weight: 700;
+    }
+    
+    /* Caption внизу */
+    .stCaption {
+        color: #6b7280 !important;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🏭 Расчёт баллов и журнал отчётов")
 
 tab_calc, tab_journal = st.tabs(["➕ Новый отчёт", "📋 Журнал отчётов"])
