@@ -341,6 +341,57 @@ with tab_calc:
                 c3.metric("Выездов", f"{total_visits} из {K}")
             else:
                 st.error("Укажите количество проверенных станций!")
+                # --- Блок редактирования существующих выездов ---
+        if current_report and len(current_report['facts']) > 0:
+            st.markdown("---")
+            st.subheader("✏️ Редактировать выезды текущего месяца")
+            
+            facts = current_report['facts']
+            
+            # Показываем все выезды для редактирования
+            st.write("**Текущие выезды:**")
+            
+            edited_facts = []
+            for i, fact in enumerate(facts):
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    new_value = st.number_input(
+                        f"Выезд #{i+1}", 
+                        min_value=0, 
+                        value=fact, 
+                        key=f"edit_visit_{i}"
+                    )
+                    edited_facts.append(new_value)
+                with col2:
+                    st.write(f"Было: {fact}")
+            
+            if st.button("💾 Сохранить изменения", key="save_edits"):
+                # Проверяем, есть ли изменения
+                if edited_facts != facts:
+                    # Обновляем весь массив выездов
+                    from datetime import datetime
+                    current_month = datetime.now().strftime("%Y-%m")
+                    
+                    results, total_score, month_percent = calc_flexible_score_dynamic(N, K, edited_facts)
+                    max_score = len(edited_facts) * 2
+                    
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute("""
+                        UPDATE reports 
+                        SET facts_json = %s, total_score = %s, max_score = %s, 
+                            month_percent = %s, created_at = NOW()
+                        WHERE id = %s
+                    """, (json.dumps(edited_facts, ensure_ascii=False), total_score, max_score, month_percent, current_report['id']))
+                    
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    
+                    st.success("✅ Изменения сохранены!")
+                    st.rerun()
+                else:
+                    st.info("Изменений не обнаружено")
 
 with tab_journal:
     st.subheader("📋 Журнал всех отчётов")
