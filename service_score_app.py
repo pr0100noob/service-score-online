@@ -38,7 +38,7 @@ def get_current_month_report(company_name):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT id, facts_json, total_score, max_score, month_percent, visit_dates
+        SELECT id, facts_json, total_score, max_score, month_percent, visit_dates, planned_visits
         FROM reports 
         WHERE company_name = %s AND month_year = %s
         ORDER BY created_at DESC LIMIT 1
@@ -49,15 +49,16 @@ def get_current_month_report(company_name):
     conn.close()
     
     if result:
-        # PostgreSQL JSONB уже возвращает объект Python
         visit_dates = result[5] if result[5] else []
+        planned_visits = result[6] if result[6] else 4
         return {
             'id': result[0],
             'facts': json.loads(result[1]),
             'total_score': result[2],
             'max_score': result[3],
             'month_percent': result[4],
-            'visit_dates': visit_dates
+            'visit_dates': visit_dates,
+            'planned_visits': planned_visits
         }
     return None
 
@@ -73,7 +74,6 @@ def save_visit_report(company_name, stations_checked, K, N):
     if current:
         # Добавляем к существующему
         facts = current['facts'] + [stations_checked]
-        # Добавляем дату нового выезда
         visit_dates = current.get('visit_dates', []) + [current_datetime]
     else:
         # Первый выезд месяца
@@ -88,7 +88,7 @@ def save_visit_report(company_name, stations_checked, K, N):
     cur = conn.cursor()
     
     if current:
-        # Обновляем существующий отчёт
+        # Обновляем существующий отчёт (K не меняем!)
         cur.execute("""
             UPDATE reports 
             SET facts_json = %s, total_score = %s, max_score = %s, 
@@ -96,11 +96,11 @@ def save_visit_report(company_name, stations_checked, K, N):
             WHERE id = %s
         """, (json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, json.dumps(visit_dates), current['id']))
     else:
-        # Создаём новый отчёт месяца
+        # Создаём новый отчёт месяца (сохраняем K!)
         cur.execute("""
-            INSERT INTO reports (company_name, month_year, facts_json, total_score, max_score, month_percent, visit_dates)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (company_name, current_month, json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, json.dumps(visit_dates)))
+            INSERT INTO reports (company_name, month_year, facts_json, total_score, max_score, month_percent, visit_dates, planned_visits)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (company_name, current_month, json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, json.dumps(visit_dates), K))
     
     conn.commit()
     cur.close()
@@ -195,12 +195,12 @@ def get_reports(company_name=None):
         cur = conn.cursor()
         if company_name:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates, planned_visits
                 FROM reports WHERE company_name = %s ORDER BY created_at DESC
             """, (company_name,))
         else:
             cur.execute("""
-                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent, visit_dates, planned_visits
                 FROM reports ORDER BY created_at DESC
             """)
 
@@ -208,7 +208,7 @@ def get_reports(company_name=None):
         cur.close()
         conn.close()
         
-        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent", "visit_dates"])
+        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent", "visit_dates", "planned_visits"])
         return df
     except:
         return pd.DataFrame()
@@ -710,8 +710,12 @@ with tab_journal:
                 st.markdown(f"**Всего выездов:** {len(facts)}")
                 st.markdown(f"**Станций по договору:** {N}")
                 
-                # Пересчитываем детальный расчёт
-                K = len(facts)  # Используем фактическое количество выездов
+                # Получаем сохранённый K (плановое количество выездов)
+                K = row.get('planned_visits', 4)  # По умолчанию 4
+                if K is None or K == 0:
+                    K = 4
+                
+                # Пересчитываем детальный расчёт с правильным K
                 results, _, _ = calc_flexible_score_dynamic(N, K, facts)
                 
                 # Показываем детальный расчёт
