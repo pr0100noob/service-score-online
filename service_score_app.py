@@ -17,7 +17,7 @@ def get_db_connection():
         host="localhost",
         database="service_score_journal",
         user="postgres",
-        password="postgres"  # ЗАМЕНИ!
+        password="postgres"
     )
 
 
