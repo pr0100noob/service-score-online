@@ -389,9 +389,15 @@ with tab_journal:
                 # Получаем даты выездов
                 visit_dates_raw = row.get('visit_dates')
                 if visit_dates_raw:
-                    try:
-                        visit_dates = json.loads(visit_dates_raw) if isinstance(visit_dates_raw, str) else visit_dates_raw
-                    except:
+                    # PostgreSQL JSONB возвращает уже распарсенный объект
+                    if isinstance(visit_dates_raw, str):
+                        try:
+                            visit_dates = json.loads(visit_dates_raw)
+                        except:
+                            visit_dates = []
+                    elif isinstance(visit_dates_raw, list):
+                        visit_dates = visit_dates_raw
+                    else:
                         visit_dates = []
                 else:
                     visit_dates = []
