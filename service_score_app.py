@@ -208,7 +208,7 @@ def get_reports(company_name=None):
         cur.close()
         conn.close()
         
-        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent", "month_percent"])
+        df = pd.DataFrame(rows, columns=["id", "created_at", "company_name", "facts_json", "total_score", "max_score", "month_percent", "visit_dates"])
         return df
     except:
         return pd.DataFrame()
