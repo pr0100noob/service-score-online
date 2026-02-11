@@ -75,29 +75,33 @@ def save_report(company_name, facts, total_score, max_score, month_percent):
     conn.close()
 
 def get_reports(company_name=None):
-    conn = get_connection()
-    if company_name:
-        df = pd.read_sql_query(
-            """
-            SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
-            FROM reports
-            WHERE company_name = ?
-            ORDER BY created_at DESC
-            """,
-            conn,
-            params=(company_name,),
-        )
-    else:
-        df = pd.read_sql_query(
-            """
-            SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
-            FROM reports
-            ORDER BY created_at DESC
-            """,
-            conn,
-        )
-    conn.close()
-    return df
+    try:
+        conn = get_connection()
+        if company_name:
+            df = pd.read_sql_query(
+                """
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
+                FROM reports
+                WHERE company_name = ?
+                ORDER BY created_at DESC
+                """,
+                conn,
+                params=(company_name,),
+            )
+        else:
+            df = pd.read_sql_query(
+                """
+                SELECT id, created_at, company_name, facts_json, total_score, max_score, month_percent
+                FROM reports
+                ORDER BY created_at DESC
+                """,
+                conn,
+            )
+        conn.close()
+        return df
+    except Exception as e:
+        # Если таблицы нет или БД не инициализирована
+        return pd.DataFrame()
 
 def delete_report(report_id):
     conn = get_connection()
