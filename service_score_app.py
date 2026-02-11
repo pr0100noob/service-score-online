@@ -16,14 +16,21 @@ SHEET_NAME = "Клиенты"
 @st.cache_data(ttl=300)  # кеш на 5 минут
 def load_companies_from_gsheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
-    client = gspread.authorize(creds)
     
+    # Проверяем: локально или Streamlit Cloud
+    if "gcp_service_account" in st.secrets:
+        # Streamlit Cloud Secrets
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    else:
+        # Локально из файла
+        creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+    
+    client = gspread.authorize(creds)
     sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
     
-    # переименуем столбцы
     df = df.rename(columns={
         "Организация": "name",
         "Количество раб.мест без серверов и доп.сервисов (обслуживаемых)": "stations"
