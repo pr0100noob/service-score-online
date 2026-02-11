@@ -552,6 +552,43 @@ st.markdown("""
         color: #64748b !important;
         text-align: center;
     }
+            
+    /* УСИЛЕННАЯ ФИКСАЦИЯ SELECTBOX */
+    div[data-baseweb="popover"] > div,
+    div[data-baseweb="popover"] ul,
+    [data-baseweb="menu"],
+    ul[role="listbox"] {
+        background-color: #1e293b !important;
+        background: #1e293b !important;
+    }
+    
+    div[data-baseweb="popover"] li,
+    [data-baseweb="menu"] > ul > li,
+    ul[role="listbox"] > li,
+    li[role="option"] {
+        background-color: transparent !important;
+        background: transparent !important;
+        color: #e2e8f0 !important;
+        font-weight: 500 !important;
+    }
+    
+    div[data-baseweb="popover"] li:hover,
+    [data-baseweb="menu"] > ul > li:hover,
+    ul[role="listbox"] > li:hover,
+    li[role="option"]:hover {
+        background-color: rgba(59, 130, 246, 0.25) !important;
+        background: rgba(59, 130, 246, 0.25) !important;
+        color: #ffffff !important;
+    }
+    
+    div[data-baseweb="popover"] li[aria-selected="true"],
+    [data-baseweb="menu"] > ul > li[aria-selected="true"],
+    ul[role="listbox"] > li[aria-selected="true"] {
+        background-color: rgba(59, 130, 246, 0.35) !important;
+        background: rgba(59, 130, 246, 0.35) !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
