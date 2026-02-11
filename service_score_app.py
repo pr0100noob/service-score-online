@@ -102,6 +102,42 @@ def save_visit_report(company_name, stations_checked, K, N):
     
     return results, total_score, max_score, month_percent, len(facts)
 
+def update_visit_in_report(company_name, visit_index, new_value, K, N):
+    """Обновить конкретный выезд в отчёте"""
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    current = get_current_month_report(company_name)
+    if not current:
+        return None
+    
+    facts = current['facts']
+    
+    # Обновляем нужный выезд
+    if 0 <= visit_index < len(facts):
+        facts[visit_index] = new_value
+    else:
+        return None
+    
+    # Пересчитываем баллы
+    results, total_score, month_percent = calc_flexible_score_dynamic(N, K, facts)
+    max_score = len(facts) * 2
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE reports 
+        SET facts_json = %s, total_score = %s, max_score = %s, 
+            month_percent = %s, created_at = NOW()
+        WHERE id = %s
+    """, (json.dumps(facts, ensure_ascii=False), total_score, max_score, month_percent, current['id']))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return results, total_score, max_score, month_percent
+
 # ---------------------- GOOGLE SHEETS ---------------------- #
 
 @st.cache_data(ttl=300)
